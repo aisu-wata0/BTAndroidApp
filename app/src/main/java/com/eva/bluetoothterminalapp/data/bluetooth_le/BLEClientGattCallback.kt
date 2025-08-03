@@ -7,6 +7,8 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothProfile
+import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.util.Log
 import com.eva.bluetoothterminalapp.data.mapper.toDomainModelWithName
@@ -35,6 +37,7 @@ private const val GATT_LOGGER = "BLE_GATT_CALLBACK"
 @Suppress("DEPRECATION")
 @SuppressLint("MissingPermission")
 class BLEClientGattCallback(
+	private val context: Context,
 	private val reader: SampleUUIDReader,
 	private val echoWrite: Boolean = true,
 ) : BluetoothGattCallback() {
@@ -273,6 +276,13 @@ class BLEClientGattCallback(
 					prev.copy(byteArray = value)
 				}
 
+				// Broadcast the received data
+				val intent = Intent(ACTION_GATT_MESSAGE_RECEIVED).apply {
+					putExtra(EXTRA_DATA, value)
+				}
+				context.sendBroadcast(intent)
+
+
 				Log.d(GATT_LOGGER, "VALUE ON CHANGE CHARACTERISTICS ${value.decodeToString()}")
 			} catch (e: Exception) {
 				Log.e(GATT_LOGGER, "EXCEPTION", e)
@@ -304,4 +314,8 @@ class BLEClientGattCallback(
 			?.getDescriptor(descriptor.uuid)
 	}
 
+	companion object {
+		const val ACTION_GATT_MESSAGE_RECEIVED = "com.eva.bluetoothterminalapp.ACTION_GATT_MESSAGE_RECEIVED"
+		const val EXTRA_DATA = "com.eva.bluetoothterminalapp.EXTRA_DATA"
+	}
 }

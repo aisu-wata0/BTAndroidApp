@@ -42,7 +42,7 @@ class AndroidBLEClientConnector(
 	private val reader: SampleUUIDReader,
 ) : BluetoothLEClientConnector {
 
-	private val gattCallback = BLEClientGattCallback(reader, echoWrite = true)
+	private val gattCallback = BLEClientGattCallback(context, reader, echoWrite = true)
 
 	private val _bluetoothManager by lazy { context.getSystemService<BluetoothManager>() }
 
