@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.core.content.getSystemService
@@ -25,6 +26,7 @@ import com.eva.bluetoothterminalapp.domain.exceptions.BLECharacteristicIndicateO
 import com.eva.bluetoothterminalapp.domain.exceptions.BLEIndicationOrNotifyRunningException
 import com.eva.bluetoothterminalapp.domain.exceptions.BLEServiceAndCharacteristicMatchNotFoundException
 import com.eva.bluetoothterminalapp.presentation.util.BTConstants
+import com.eva.bluetoothterminalapp.service.BLEConnectionService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -85,6 +87,8 @@ class AndroidBLEClientConnector(
 				gattCallback,
 				BluetoothDevice.TRANSPORT_LE
 			)
+			val serviceIntent = BLEConnectionService.newIntent(context, device.name ?: "Unknown Device")
+			context.startService(serviceIntent)
 			Log.d(TAG, "CONNECT GATT")
 			// load all files
 			reader.loadFromFiles()
@@ -304,6 +308,8 @@ class AndroidBLEClientConnector(
 	override fun disconnect(): Result<Unit> {
 		return try {
 			_bLEGatt?.disconnect()
+			val serviceIntent = Intent(context, BLEConnectionService::class.java)
+			context.stopService(serviceIntent)
 			Log.d(TAG, "CLIENT DISCONNECTED")
 			// disconnects the gatt client
 			Result.success(Unit)
@@ -320,6 +326,8 @@ class AndroidBLEClientConnector(
 			// close the gatt server
 			_bLEGatt?.close()
 			_bLEGatt = null
+			val serviceIntent = Intent(context, BLEConnectionService::class.java)
+			context.stopService(serviceIntent)
 			Log.d(TAG, "GATT CLIENT CLOSED")
 		} catch (e: Exception) {
 			e.printStackTrace()
