@@ -55,10 +55,10 @@ class BLEConnectionService : Service() {
             val data = intent?.getByteArrayExtra(BLEClientGattCallback.EXTRA_DATA)
 
             if (uuid != null && data != null) {
-                var parsedValue: String? = null
+                var parsedValue: Int? = null
                 val message = if (uuid == "00002a37-0000-1000-8000-00805f9b34fb") {
                     val heartRate = parseHeartRate(data)
-                    parsedValue = "$heartRate bpm"
+                    parsedValue = heartRate
                     "Heart Rate: $parsedValue"
                 } else {
                     String(data)

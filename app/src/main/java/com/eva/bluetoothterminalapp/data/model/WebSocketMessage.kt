@@ -9,5 +9,5 @@ data class WebSocketMessage(
     val serviceUUID: String,
     val characteristicUUID: String,
     val raw_value: String,
-    val parsed_value: String? = null
+    val parsed_value: Int? = null
 )
