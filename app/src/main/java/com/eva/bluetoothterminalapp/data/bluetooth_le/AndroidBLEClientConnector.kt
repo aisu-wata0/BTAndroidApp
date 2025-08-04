@@ -87,7 +87,7 @@ class AndroidBLEClientConnector(
 				gattCallback,
 				BluetoothDevice.TRANSPORT_LE
 			)
-			val serviceIntent = BLEConnectionService.newIntent(context, device.name ?: "Unknown Device")
+			val serviceIntent = BLEConnectionService.newIntent(context, device.name ?: "Unknown Device", device.address)
 			context.startService(serviceIntent)
 			Log.d(TAG, "CONNECT GATT")
 			// load all files

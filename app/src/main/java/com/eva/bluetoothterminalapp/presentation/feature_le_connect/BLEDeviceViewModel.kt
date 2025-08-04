@@ -14,6 +14,7 @@ import com.eva.bluetoothterminalapp.presentation.feature_le_connect.state.Select
 import com.eva.bluetoothterminalapp.presentation.feature_le_connect.state.WriteCharacteristicEvent
 import com.eva.bluetoothterminalapp.presentation.navigation.args.BluetoothDeviceArgs
 import com.eva.bluetoothterminalapp.presentation.util.AppViewModel
+import com.eva.bluetoothterminalapp.presentation.util.NetworkUtils
 import com.eva.bluetoothterminalapp.presentation.util.UiEvents
 import com.ramcosta.composedestinations.generated.navArgs
 import kotlinx.collections.immutable.toImmutableList
@@ -71,6 +72,9 @@ class BLEDeviceViewModel(
 
 	private val _showCloseConnectionDialog = MutableStateFlow(false)
 	val showConnectionDialog = _showCloseConnectionDialog.asStateFlow()
+
+	val serverUrl: String?
+		get() = NetworkUtils.getLocalIpAddress()
 
 
 	private val _uiEvents = MutableSharedFlow<UiEvents>()

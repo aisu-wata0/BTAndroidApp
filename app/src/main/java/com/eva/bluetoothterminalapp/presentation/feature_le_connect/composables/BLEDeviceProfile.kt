@@ -37,6 +37,7 @@ import com.eva.bluetoothterminalapp.ui.theme.BlueToothTerminalAppTheme
 fun BLEDeviceProfile(
 	device: BluetoothDeviceModel?,
 	modifier: Modifier = Modifier,
+	serverUrl: String? = null,
 	connectionState: BLEConnectionState = BLEConnectionState.CONNECTED,
 	rssi: Int = 0,
 	shape: Shape = MaterialTheme.shapes.large,
@@ -87,6 +88,13 @@ fun BLEDeviceProfile(
 						style = MaterialTheme.typography.labelLarge,
 						modifier = Modifier.width(IntrinsicSize.Max)
 					)
+					if (serverUrl != null) {
+						Text(
+							text = "WebSocket: ws://$serverUrl:8080/ws",
+							style = MaterialTheme.typography.labelLarge,
+							modifier = Modifier.width(IntrinsicSize.Max)
+						)
+					}
 					BLEConnectionStatusChip(
 						state = connectionState,
 						shape = MaterialTheme.shapes.small

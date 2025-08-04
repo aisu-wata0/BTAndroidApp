@@ -89,6 +89,7 @@ fun AnimatedVisibilityScope.BTLEClientScreen(
 			deviceAddress = args.address,
 			profile = bleProfile,
 			selectedCharacteristic = selectedCharacteristics,
+			serverUrl = viewModel.serverUrl,
 			onSelectEvent = viewModel::onCharacteristicEvent,
 			onConfigEvent = viewModel::onConfigEvents,
 			navigation = {

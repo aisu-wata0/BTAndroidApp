@@ -50,6 +50,7 @@ fun BLEDeviceRoute(
 	deviceAddress: String,
 	profile: BLEDeviceProfileState,
 	selectedCharacteristic: SelectedCharacteristicState,
+	serverUrl: String?,
 	onSelectEvent: (BLECharacteristicEvent) -> Unit,
 	modifier: Modifier = Modifier,
 	onConfigEvent: (BLEDeviceConfigEvent) -> Unit = {},
@@ -83,6 +84,7 @@ fun BLEDeviceRoute(
 				device = profile.device,
 				connectionState = profile.connectionState,
 				rssi = profile.signalStrength,
+				serverUrl = serverUrl
 			)
 			AnimatedVisibility(
 				visible = profile.connectionState == BLEConnectionState.CONNECTED,
@@ -124,6 +126,7 @@ private fun BLEDevicesRoutePreview(
 		deviceAddress = PreviewFakes.FAKE_DEVICE_MODEL.address,
 		profile = profile,
 		selectedCharacteristic = SelectedCharacteristicState(),
+		serverUrl = "192.168.0.1",
 		onSelectEvent = {},
 		navigation = {
 			Icon(

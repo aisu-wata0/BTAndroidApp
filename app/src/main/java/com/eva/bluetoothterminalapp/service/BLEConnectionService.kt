@@ -16,11 +16,38 @@ import androidx.core.content.ContextCompat
 import com.eva.bluetoothterminalapp.MainActivity
 import com.eva.bluetoothterminalapp.R
 import com.eva.bluetoothterminalapp.data.bluetooth_le.BLEClientGattCallback
+import com.eva.bluetoothterminalapp.data.model.WebSocketMessage
+import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
+import io.ktor.server.cio.*
+import io.ktor.server.engine.*
+import io.ktor.server.routing.*
+import io.ktor.server.websocket.*
+import io.ktor.websocket.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
+import java.util.Collections
 
 class BLEConnectionService : Service() {
 
     private lateinit var notificationManager: NotificationManager
     private lateinit var notificationBuilder: NotificationCompat.Builder
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val server by lazy {
+        embeddedServer(CIO, port = 8080, module = { webSocketModule() })
+    }
+    private val connectedClients = Collections.synchronizedSet<DefaultWebSocketSession>(LinkedHashSet())
+
+    private var deviceName: String = "Unknown Device"
+    private var deviceAddress: String = "Unknown Address"
+
 
     private val gattUpdateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -28,11 +55,30 @@ class BLEConnectionService : Service() {
             val data = intent?.getByteArrayExtra(BLEClientGattCallback.EXTRA_DATA)
 
             if (uuid != null && data != null) {
-                if (uuid == "00002a37-0000-1000-8000-00805f9b34fb") {
+                var parsedValue: String? = null
+                val message = if (uuid == "00002a37-0000-1000-8000-00805f9b34fb") {
                     val heartRate = parseHeartRate(data)
-                    updateNotification("Heart Rate: $heartRate bpm")
+                    parsedValue = "$heartRate bpm"
+                    "Heart Rate: $parsedValue"
                 } else {
-                    updateNotification(String(data))
+                    String(data)
+                }
+                updateNotification(message)
+
+                val wsMessage = WebSocketMessage(
+                    deviceName = deviceName,
+                    deviceAddress = deviceAddress,
+                    serviceUUID = "0000180d-0000-1000-8000-00805f9b34fb", // Assuming Heart Rate Service for now
+                    characteristicUUID = uuid,
+                    raw_value = data.joinToString(separator = "") { "%02x".format(it) },
+                    parsed_value = parsedValue
+                )
+
+                serviceScope.launch {
+                    val jsonMessage = Json.encodeToString(WebSocketMessage.serializer(), wsMessage)
+                    connectedClients.forEach { client ->
+                        client.send(Frame.Text(jsonMessage))
+                    }
                 }
             }
         }
@@ -46,10 +92,13 @@ class BLEConnectionService : Service() {
         super.onCreate()
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         registerReceiver(gattUpdateReceiver, IntentFilter(BLEClientGattCallback.ACTION_GATT_MESSAGE_RECEIVED))
+        server.start(wait = false)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val deviceName = intent?.getStringExtra(EXTRA_DEVICE_NAME) ?: "Unknown Device"
+        deviceName = intent?.getStringExtra(EXTRA_DEVICE_NAME) ?: "Unknown Device"
+        deviceAddress = intent?.getStringExtra(EXTRA_DEVICE_ADDRESS) ?: "Unknown Address"
+
 
         createNotificationChannel()
 
@@ -108,11 +157,32 @@ class BLEConnectionService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(gattUpdateReceiver)
+        server.stop(1_000, 2_000)
+        serviceScope.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
+    }
+
+    private fun Application.webSocketModule() {
+        install(WebSockets) {
+            contentConverter = KotlinxWebsocketSerializationConverter(Json)
+        }
+        routing {
+            webSocket("/ws") {
+                try {
+                    connectedClients.add(this)
+                    for (frame in incoming) {
+                        // Handle incoming messages if needed
+                    }
+                } finally {
+                    connectedClients.remove(this)
+                }
+            }
+        }
     }
 
     companion object {
         const val EXTRA_DEVICE_NAME = "EXTRA_DEVICE_NAME"
+        const val EXTRA_DEVICE_ADDRESS = "EXTRA_DEVICE_ADDRESS"
         const val CHANNEL_ID = "BLEConnectionServiceChannel"
         const val NOTIFICATION_ID = 1
 
@@ -120,9 +190,10 @@ class BLEConnectionService : Service() {
         private const val HEART_RATE_FORMAT_UINT16 = 1
 
 
-        fun newIntent(context: Context, deviceName: String): Intent {
+        fun newIntent(context: Context, deviceName: String, deviceAddress: String): Intent {
             return Intent(context, BLEConnectionService::class.java).apply {
                 putExtra(EXTRA_DEVICE_NAME, deviceName)
+                putExtra(EXTRA_DEVICE_ADDRESS, deviceAddress)
             }
         }
     }
