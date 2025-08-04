@@ -62,7 +62,7 @@ class BLEConnectionService : Service() {
         )
 
         notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Connected to BLE Device")
+            .setContentTitle("$deviceName Connected (BLE)")
             .setContentText("Device: $deviceName")
             .setSmallIcon(R.drawable.bluetooth_le)
             .setContentIntent(pendingIntent)

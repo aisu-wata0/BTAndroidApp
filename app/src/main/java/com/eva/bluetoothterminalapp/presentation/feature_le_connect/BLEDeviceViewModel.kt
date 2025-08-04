@@ -143,7 +143,7 @@ class BLEDeviceViewModel(
 
 	private fun onUnSelectCharacteristics() {
 		// turn this off
-		if (isNotifyOrIndicationRunning) stopIndications()
+		//if (isNotifyOrIndicationRunning) stopIndications()
 
 		_selectedCharacteristic.update { SelectedCharacteristicState() }
 	}
