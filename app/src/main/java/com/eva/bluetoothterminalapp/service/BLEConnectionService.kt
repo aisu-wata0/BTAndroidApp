@@ -24,9 +24,16 @@ class BLEConnectionService : Service() {
 
     private val gattUpdateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            val uuid = intent?.getStringExtra(BLEClientGattCallback.EXTRA_UUID)
             val data = intent?.getByteArrayExtra(BLEClientGattCallback.EXTRA_DATA)
-            if (data != null) {
-                updateNotification(String(data))
+
+            if (uuid != null && data != null) {
+                if (uuid == "00002a37-0000-1000-8000-00805f9b34fb") {
+                    val heartRate = parseHeartRate(data)
+                    updateNotification("Heart Rate: $heartRate bpm")
+                } else {
+                    updateNotification(String(data))
+                }
             }
         }
     }
@@ -88,6 +95,16 @@ class BLEConnectionService : Service() {
         notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
     }
 
+    private fun parseHeartRate(data: ByteArray): Int {
+        val flag = data[0].toInt()
+        val format = if ((flag and 0x01) != 0) HEART_RATE_FORMAT_UINT16 else HEART_RATE_FORMAT_UINT8
+        return if (format == HEART_RATE_FORMAT_UINT16) {
+            (data[1].toInt() and 0xFF) or ((data[2].toInt() and 0xFF) shl 8)
+        } else {
+            data[1].toInt() and 0xFF
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(gattUpdateReceiver)
@@ -98,6 +115,10 @@ class BLEConnectionService : Service() {
         const val EXTRA_DEVICE_NAME = "EXTRA_DEVICE_NAME"
         const val CHANNEL_ID = "BLEConnectionServiceChannel"
         const val NOTIFICATION_ID = 1
+
+        private const val HEART_RATE_FORMAT_UINT8 = 0
+        private const val HEART_RATE_FORMAT_UINT16 = 1
+
 
         fun newIntent(context: Context, deviceName: String): Intent {
             return Intent(context, BLEConnectionService::class.java).apply {

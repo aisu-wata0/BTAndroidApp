@@ -278,6 +278,7 @@ class BLEClientGattCallback(
 
 				// Broadcast the received data
 				val intent = Intent(ACTION_GATT_MESSAGE_RECEIVED).apply {
+					putExtra(EXTRA_UUID, characteristic.uuid.toString())
 					putExtra(EXTRA_DATA, value)
 				}
 				context.sendBroadcast(intent)
@@ -316,6 +317,7 @@ class BLEClientGattCallback(
 
 	companion object {
 		const val ACTION_GATT_MESSAGE_RECEIVED = "com.eva.bluetoothterminalapp.ACTION_GATT_MESSAGE_RECEIVED"
+		const val EXTRA_UUID = "com.eva.bluetoothterminalapp.EXTRA_UUID"
 		const val EXTRA_DATA = "com.eva.bluetoothterminalapp.EXTRA_DATA"
 	}
 }
