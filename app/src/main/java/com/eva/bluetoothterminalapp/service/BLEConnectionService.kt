@@ -102,7 +102,7 @@ class BLEConnectionService : Service() {
 
         createNotificationChannel()
 
-        val notificationIntent = Intent(this, MainActivity::class.java)
+        val notificationIntent = packageManager.getLaunchIntentForPackage(packageName)
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,
